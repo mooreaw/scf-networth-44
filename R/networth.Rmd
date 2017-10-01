@@ -8,7 +8,7 @@ output:
     code_folding: show
 ---
 
-Matt Bruenig at the [People's Policy Project](http://peoplespolicyproject.org/) published a [post](http://peoplespolicyproject.org/2017/09/27/new-fed-data-black-wealth-cratered-under-obama/) last week looking at 2016 data for family net worth as reported by the [Survey of Consumer Finance (SCF).](https://www.federalreserve.gov/econres/scfindex.htm) The post's title was provacative (*"Black Wealth Cratered Under Obama"*), and the same goes for the findings being discussed. Using the 2007 and 2016 waves of the survey, Bruenig grouped family net worth into percentiles, and took the difference between each point. Bruenig broke the results down by race/ethnicity, but generally speaking, aside from the wealthiest Americans, most families still haven't recovered to their pre-recession level of household net worth. Bruenig presented the results as line graphs, which didn't strike me as particularly problematic when I read the post, but a friend pointed out that the tweet announcing the post had stacked up a fair amount of salty comments.
+Matt Bruenig at the [People's Policy Project](http://peoplespolicyproject.org/) (PPP) published a [post](http://peoplespolicyproject.org/2017/09/27/new-fed-data-black-wealth-cratered-under-obama/) last week looking at 2016 data for family net worth as reported by the [Survey of Consumer Finance (SCF).](https://www.federalreserve.gov/econres/scfindex.htm) The post's title was provacative (*"Black Wealth Cratered Under Obama"*), and the same goes for the findings being discussed. Using the 2007 and 2016 waves of the survey, Bruenig grouped family net worth into percentiles, and took the difference between each point. Bruenig broke the results down by race/ethnicity, but generally speaking, aside from the wealthiest Americans, most families still haven't recovered to their pre-recession level of household net worth. Bruenig presented the results as line graphs, which didn't strike me as particularly problematic when I read the post, but a friend pointed out that the tweet announcing the post had stacked up a fair amount of salty comments.
 
 <!-- https://twitter.com/VladGutman/status/913292852989325312 -->
 <center>![](../salt.png)</center>
@@ -75,11 +75,16 @@ pctles <- pctles %>%
   group_by(race, pctle) %>%
   arrange(race, pctle, year) %>%
   mutate(
-    diff = abs(networth) - abs(first(networth)),
-    diff = ifelse(networth < 0 & first(networth) < 0, -diff, diff),
-    diff = ifelse(networth < 0 & first(networth) > 0, -diff, diff)
+    diff = abs(first(networth) - networth),                # absolute difference
+    diff = ifelse(networth < first(networth), -diff, diff) # increase or decrease?
   ) %>%
   ungroup
+```
+
+This gives us a "tall" data file that's structured like this:
+
+```{r pctles-3, echo = FALSE}
+knitr::kable(pctles[1:4, ])
 ```
 
 ```{r build-plots, echo = FALSE}
@@ -155,13 +160,17 @@ Lastly, looking at Hispanic/Latino wealth, we see a similar pattern to the previ
 ggplotly(p3, tooltip = "Label")
 ```
 
+```{r save-outfile, echo = FALSE}
+write_csv(pctles[, -ncol(pctles)], "../data/pctles-networth-diff-0716.csv")
+```
+
 #### wrap up
 
 As far as I can tell, I think I've matched the spirit of Bruenig's approach, and ideally expanded on the original presentation. The basic takeaway for the most recent data seems the same, in that black and Hispanic/Latino families experienced enduring losses of wealth amongst their middle class, whereas whites above the 75th percentile are making some strong gains. However, a few aspects of what I'm seeing with my results pose some questions I feel like I need to account for:
 
-1. For both white and Hispanic/Latino families, I'm seeing a really sharp climb between 2013 and 2016 among the highest percentiles. This recovery seems more gradual in the plot for black families. I don't have an immediate explanation for this, which bothers me. I know recovery from the financial crisis has been slow, but I feel skeptical about a shift only appearing in the last few years, even among the wealthiest. That leads me to put a more critical eye on my code and the data I've been using. Perhaps I'm using the weights incorrectly, or I've missed a crucial command or otherwise mishandled the data, and someone can [open an issue](https://github.com/mooreaw/scf-networth-44/issues/new) to help me fix it.
+1. For both white and Hispanic/Latino families, I'm seeing a really sharp climb between 2013 and 2016 among the highest percentiles. This recovery seems more gradual in the plot for black families. I don't have an immediate explanation for this, which bothers me. I know recovery from the financial crisis has been slow, but I feel skeptical about a shift only appearing in the last few years, even among the wealthiest.
 
-2. My 2016 estimates look a little bit different from Bruenig's. Using the second figure as an example, I'm seeing the 15-20th~ percentiles having gained a little ground across all 3 waves compared to 2007. Our estimates for the 50th percentile also are generally close to each other, but don't match. There are a lot of potential explanations for this (e.g. differences in how percentiles are calculated, differences in the way survey weights are managed, or an error I haven't caught), but that ultimately highlights something I hope I could see from PPP in the future: transparency through reproducible findings.
+2. This leads me to put a more critical eye on my code and the data I've been using. Perhaps I'm using the weights incorrectly, missed a crucial command, or otherwise mishandled the data, and someone can [open an issue](https://github.com/mooreaw/scf-networth-44/issues/new) to help me fix it. Ultimately this highlights something I hope I could see from PPP in the future: transparency through reproducible findings.
 
 I'm not an economist, and haven't worked with SCF data before this weekend when I wrote this up, so I'm probably not fully equipped to dive into the findings that Bruenig posted. But, as an observer, I really like seeing research or reports that make the data they use/present available, as well as the code that's used to draw their graphs or compute the estimates they discuss. It's helpful for novices that are new to an issue, and it's also a way to help clear up ambiguities about data that's being consumed. I'm used to seeing people in various fields doing that amongst themselves online, but I sometimes download materials to take a closer look at things that interest me. 
 
