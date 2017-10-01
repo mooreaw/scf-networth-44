@@ -1,0 +1,6 @@
+# ignore the zip and stata files
+*.zip
+*.dta
+
+# also prevent these things from showing up
+.DS_Store
