@@ -4,3 +4,4 @@
 
 # also prevent these things from showing up
 .DS_Store
+.Rproj.user
